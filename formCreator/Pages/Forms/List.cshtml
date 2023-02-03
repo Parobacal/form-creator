@@ -1,0 +1,68 @@
+﻿@page
+@model formCreator.Pages.Forms.ListModel
+@{
+}
+
+@section HeadBlock {
+    <link rel="stylesheet" media="screen, print" href="~/css/fa-duotone.css">
+}
+
+<div class="row">
+    <div class="col-12">
+        <div id="panel-1" class="panel">
+            <div class="panel-hdr">
+                <h2>
+                    Formularios
+                    <span class="fw-300">
+                        <i>List filter</i>
+                    </span>
+                </h2>
+            </div>
+
+
+            <div class="panel-container show">
+                <div class="panel-content">
+
+                    <div class="col-12">
+                        <div class="bg-primary-500 rounded">
+                            <div class="d-flex position-relative py-3 px-4">
+                                <i class="@(Settings.Theme.IconPrefix) fa-search color-primary-50 position-absolute pos-left fs-lg px-3 py-2 mt-1 ml-4"></i>
+                                <input type="text" id="js_nested_list_filter" class="form-control shadow-inset-1 pl-6 border-dark" placeholder="Filter forms">
+                            </div>
+
+
+                            <ul id="js_nested_list" class="list-group px-2 py-2  bg-fusion-600 " data-nav-accordion="true">
+                                @foreach (var form in Model.formList)
+                                {
+                                    <li class="list-group-item bg-gray-200  color-black d-flex justify-content-between">
+                                        <span data-filter-tags="reports file">@form.form.Name</span>
+                                        <div class="row " style="width:30%">
+                                            <div class="col-4 pr-0">
+
+                                                <button class="btn btn-success btn-sm btn-block" onclick="goToAnswers(@form.form.Id)">Nueva respuesta</button>
+                                            </div>
+                                            <div class="col-4 pr-0">
+
+                                                <button class="btn btn-primary btn-sm btn-block" onclick="goToResponses(@form.form.Id)">Listado de respuestas</button>
+                                            </div>
+                                            <div class="col-4 pr-0">
+
+                                                <button class="btn btn-warning btn-sm btn-block text-white" onclick="goToEdit(@form.form.Id)">Editar</button>
+                                            </div>
+
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                            <div class="filter-message js-filter-message m-0 text-left pl-4 py-3 fw-500"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+        </div>
+    </div>
+</div>
