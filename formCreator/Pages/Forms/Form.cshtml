@@ -1,0 +1,852 @@
+﻿@page
+@model formCreator.Pages.Forms.FormModel
+
+@{
+    ViewData["Title"] = "form Creator";
+    ViewData["PageName"] = "sitemanagement_creator";
+    ViewData["Heading"] = "<i class='fal fa-hospital'></i> Site Management: <span class='fw-300'>form creator</span>";
+    ViewData["Category1"] = "Site Management";
+    ViewData["PageIcon"] = "fa-shield-alt";
+
+    var confirmanimation = new Syncfusion.EJ2.Popups.DialogAnimationSettings { Effect = Syncfusion.EJ2.Popups.DialogEffect.None };
+
+    var confirmbutton = new
+    {
+        content = "Yes",
+        isPrimary = true
+    };
+
+    var noconfirmbutton = new
+    {
+        content = "No",
+    };
+
+    var insertComponent = new
+    {
+        tooltipText = "Insert component",
+        template = "<button class='e-tbar-btn e-btn' tabindex='-1' id='custom_tbar'  style='width:100%'><div class='e-tbar-btn-text rtecustomtool' style='font-weight: 500;'><i class=\"fad fa-layer-plus\"></i></div></button>"
+    };
+
+    var saveComponent = new
+    {
+        tooltipText = "Raw Preview",
+        template = "<button onclick='SaveButtonPDF()' class='e-tbar-btn e-btn' tabindex='-1' id='custom_tbar_savee'  style='width:100%'><div class='e-tbar-btn-text rtecustomtool' style='font-weight: 500;'><i class=\"fal fa-eye\"></i></div></button>"
+    };
+
+
+    var richtext_tools = new object[]
+    {
+        "Bold", "Italic", "Underline", "StrikeThrough", "FontColor", "FontSize", "ClearFormat", "|", "Formats", "Alignments", "OrderedList",
+        "UnorderedList", "|", "CreateLink", "Image", "CreateTable", "|", insertComponent, saveComponent,
+        "|", "Undo", "Redo"
+    };
+
+    var insert_button = new
+    {
+        content = "Insert",
+        isPrimary = true
+    };
+
+    var cancel_button = new
+    {
+        content = "Cancel"
+    };
+
+    var closePDFViewer = new
+    {
+        content = "Close"
+    };
+    var save_button = new
+    {
+        content = "Save",
+        isPrimary = true
+    };
+
+    var delete_button = new
+        {
+            content = "Eliminar",
+            iconCss = "e-icons e-close-icon"
+        };
+
+    var asyncSettings = new Syncfusion.EJ2.Inputs.UploaderAsyncSettings { SaveUrl = @Url.Content("~/Uploader/Save"), RemoveUrl = @Url.Content("~/Uploader/Remove") };
+
+    var file_dropdown = new string[] { "All", "Audio", "Video", "Image", "PDF", "Word" };
+    var denied_tags = new string[] { "button" };
+    var input_autofill = new string[] { "Client First Name", "Client Middel Name", "Client Last Name", "Client Full Name", "Client Name Sufix", "Client Name Prefix", "Client Phone", "Client Email", "Client Address 1", "Client Address 2", "Client Address Zip", "Client Address City", "Client Address State" };
+    var large_autofill = new string[] { "Custom Field: Diagnosis", "Custom Field: Single Select", "Custom Field: Multi Select", "Custom Field: New Multi", "Custom Field: insurance Report" };
+    var input_type_dropdown = new object[] { new { Id = 0, Text = "Text" }, new { Id = 1, Text = "Date" }, new { Id = 2, Text = "Number" }, new { Id = 3, Text = "Location" } };
+}
+
+@section HeadBlock {
+    <script></script>
+    <link rel="stylesheet" media="screen, print" href="~/css/notifications/toastr/toastr.css">
+    <link rel="stylesheet" media="screen, print" href="~/css/notifications/sweetalert2/sweetalert2.bundle.css">
+    <link rel="stylesheet" media="screen, print" href="~/css/fa-duotone.css">
+    <style>
+
+        .e-close-icon::before {
+            content: '\e820';
+        }
+
+        div#spinner
+        {
+            display: none;
+            position: fixed;
+                z-index: 999;
+                height: 100%;
+                width: 100%;
+                top: 0;
+                left: 0;
+                background-color: Black;
+                opacity: .5;
+
+        }
+
+        .loaderrBackground
+        {
+            position: fixed;
+            z-index: 2;
+            height: 100%;
+            width: 100%;
+            top: 0;
+            left: 0;
+            background-color: white;
+            display: flex;
+            align-items: center;
+            justify-content:center;
+        }
+
+        .loaderrSpinner
+        {
+             position: fixed;
+             z-index:2;
+             overflow: auto;
+
+        }
+
+
+        div#loader
+        {
+
+
+            position: fixed;
+            top: 50%;
+            left: 45%;
+            text-align:center;
+            padding:10px;
+            font:normal 16px Tahoma, Geneva, sans-serif;
+            margin-left: -50px;
+            margin-top: -50px;
+            z-index:2;
+            overflow: auto;
+        }
+
+        #customTbarDialog #special_char,
+        #customTbarDialog .char_block {
+            display: inline-block;
+        }
+
+        #custom_tbar,
+        #custom_tbar div {
+            cursor: pointer;
+        }
+
+        #rteSpecial_char {
+            padding: 15px 0 15px 0;
+        }
+
+        #customTbarDialog .char_block.e-active {
+            outline: 1px solid #0000FF;
+            border-color: #0000FF;
+        }
+
+        #customTbarDialog .char_block {
+            width: 165px;
+            height: 30px;
+            line-height: 30px;
+            margin: 0 5px 5px 0;
+            text-align: center;
+            vertical-align: middle;
+            border: 1px solid #DDDDDD;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #custom_tbar .rtecustomtool {
+            font-size: 18px;
+        }
+
+        .rep {
+            border: 1px dashed black;
+        }
+
+        .repeat-content{
+            display: block;
+        }
+
+    </style>
+}
+
+@Html.AntiForgeryToken()
+
+<div id="spinnerInit"  class="loaderrBackground" >
+    <div   class="spinner-grow text-primary loaderrSpinner" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-xl-12">
+        <div id="panel-1" class="panel">
+            <div class="panel-container show">
+                <div class="panel-content mt-2 mx-2">
+
+                    <div class="row">
+                        <div class="col-md-3 col-sm-3 col-xs-3">
+                            Nombre del formulario
+                            @if (@Model.ListVersions != null)
+                            {
+                                <input id="form-name" class="e-input" placeholder="form name" value="@Model.Name" type="text">
+                            }
+                            else
+                            {
+                                <input id="form-name" class="e-input" placeholder="Ingresar nombre de formulario" type="text">
+                            }
+
+                        </div>
+                        <div class="col-md-1 col-sm-1 col-xs-1">
+                            <div id="dropDownVersion"></div>
+
+                        </div>
+                        <div class="col-md-4 col-sm-4 col-xs-4"></div>
+                        <div class="col-md-2 col-sm-2 col-xs-2 text-right">
+                            <button type='button' onclick="creatform(1)" class='btn btn-danger btn-sm'>
+                                <i class="fad fa-file-check fa-fw"></i>
+                                Save and close
+                            </button>
+                        </div>
+                        <div class="col-md-2 col-sm-2 col-xs-2 text-right">
+                            <button type='button' onclick="creatform(2)" class='btn btn-success btn-sm'>
+                                <i class="fad fa-file-check fa-fw"></i>
+                                Save Form
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col">
+                            @* <ejs-richtexteditor id="customtool" enableHtmlSanitizer="false" value="@Model.LastFormVersion.HTML" created="created" focus="onFocus" actionComplete="actionComplete" beforeQuickToolbarOpen="beforeQuickToolbarOpen"> *@
+                            @*     <e-richtexteditor-toolbarsettings items="@richtext_tools"></e-richtexteditor-toolbarsettings> *@
+                            @* </ejs-richtexteditor> *@
+
+                            @if (@Model.ListVersions != null)
+                            {
+                                <ejs-richtexteditor id="customtool"  toolbarClick="toolbarClick" enableHtmlSanitizer="false" value="@Model.LastFormVersion.HTML" blur="onBlur" created="created" actionComplete="actionComplete" actionBegin="actionBegin" beforeQuickToolbarOpen="beforeQuickToolbarOpen">
+                                        <e-richtexteditor-toolbarsettings items="@richtext_tools"></e-richtexteditor-toolbarsettings>
+                                </ejs-richtexteditor>
+                            }
+                            else
+                            {
+                                <ejs-richtexteditor id="customtool"  toolbarClick="toolbarClick" enableHtmlSanitizer="false" blur="onBlur" created="created" actionComplete="actionComplete" beforeQuickToolbarOpen="beforeQuickToolbarOpen">
+                                        <e-richtexteditor-toolbarsettings items="@richtext_tools"></e-richtexteditor-toolbarsettings>
+                                        <e-richtexteditor-pastecleanupsettings deniedTags="denied_tags"></e-richtexteditor-pastecleanupsettings>
+                                </ejs-richtexteditor>
+                            }
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================== insertComponent dialog ========================== -->
+
+<ejs-dialog id="customTbarDialog" visible="false" header='Select component' created="onDialogCreate" zIndex="1000" showCloseIcon="false" isModal="true"
+            overlayClick="dialogOverlay">
+    <e-dialog-buttons position="left">
+        <e-dialog-dialogbutton buttonModel="@insert_button" click="onInsert"></e-dialog-dialogbutton>
+        <e-dialog-dialogbutton buttonModel="@cancel_button" click="dialogOverlay"></e-dialog-dialogbutton>
+    </e-dialog-buttons>
+    <e-content-template>
+        <span id="btnWarn" style="display:block; color:red">
+            Please insert outside component
+        </span>
+        <div id="rteSpecial_char" style="display:block">
+            <div class="char_block">Input</div>
+        </div>
+    </e-content-template>
+</ejs-dialog>
+
+<ejs-dialog id="inputDialog" visible="false" header='Input properties' height="60%" width="40%" zIndex="1000" showCloseIcon="false" isModal="true">
+    <e-dialog-buttons>
+        <e-dialog-dialogbutton buttonModel="@save_button" click="saveDialog"></e-dialog-dialogbutton>
+        <e-dialog-dialogbutton buttonModel="@cancel_button" click="hideDialog"></e-dialog-dialogbutton>
+        <e-dialog-dialogbutton buttonModel="@delete_button" type="reset" click="ShowDeleteDialog"></e-dialog-dialogbutton>
+    </e-dialog-buttons>
+    <e-content-template>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <span>Set placeholder</span>
+                    <span id="inputlabelwarn" style="color:red; display:none">Please add a label</span>
+                    <ejs-textbox id="input-placeholder" placeholder="Set label" change="setPlaceholder"></ejs-textbox>
+                </div>
+                <div class="col">
+                    Revision
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col">
+                    <span id="inputtypewarn" style="color:red; display:none">Please select a type</span>
+                    <ejs-dropdownlist id="input-type" dataSource="@input_type_dropdown" placeholder="Select type" change="setType">
+                        <e-dropdownlist-fields text="Text" value="Id"></e-dropdownlist-fields>
+                    </ejs-dropdownlist>
+                </div>
+                <div class="col">
+                    <div class="e-input-group">
+                        <input id="preview-input" class="e-input" placeholder="Your label" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col">
+                    <ejs-checkbox id="input-checkbox" label="Required"></ejs-checkbox>
+                </div>
+            </div>
+        </div>
+    </e-content-template>
+</ejs-dialog>
+
+@section ScriptsBlock {
+
+    <script src="~/js/form-control/PropertiesFile.js"></script>
+    <script src="~/js/notifications/sweetalert2/sweetalert2.bundle.js"></script>
+    <script src="~/js/notifications/toastr/toastr.js"></script>
+
+    @* Input for Form Creator *@
+    <script type="text/javascript">
+        var defaultRTE, defaultRTE2, selection, ranges, dialog, inputDialog, label, _id, _seq, _conditions, saveSelection;
+        let onUpdate = false;
+        let saveClose = false;
+        let oldVersion, cursorPlace;
+        let idForm;
+
+        /*
+            Loading animation
+        */
+        var div = document.getElementsByClassName('progressbar-label');
+        var progressLoad = function (args) {
+            var selectedTheme = location.hash.split('/')[1];
+            selectedTheme = selectedTheme ? selectedTheme : 'Material';
+            args.progressBar.theme = (selectedTheme.charAt(0).toUpperCase() +
+                selectedTheme.slice(1)).replace(/-dark/i, 'Dark').replace(/contrast/i, 'Contrast');
+            if (args.progressBar.theme === 'HighContrast' || args.progressBar.theme === 'Bootstrap5Dark' || args.progressBar.theme === 'BootstrapDark' || args.progressBar.theme === 'FabricDark'
+                || args.progressBar.theme === 'TailwindDark' || args.progressBar.theme === 'MaterialDark') {
+                for (let i = 0; i < div.length; i++) {
+                    div[i].setAttribute('style', 'color:white');
+                }
+            }
+        };
+
+
+        let versionObj = new ej.dropdowns.DropDownList({
+            dataSource: @Html.Raw(Json.Serialize(Model.ListVersions)),
+            index: @Html.Raw(Json.Serialize(Model.Latest)),
+            change: valueChange,
+            fields: { value: 'version' }
+        });
+        versionObj.appendTo('#version');
+
+        window.onload = function () {
+            oldVersion = defaultRTE.getHtml();
+
+            let dropDownComponent = new ej.dropdowns.DropDownList({
+                dataSource: [],
+                fields: { value: 'id', text: 'label' },
+                placeholder: 'Select component',
+                change: ddlCloneChange
+            });
+            dropDownComponent.appendTo('#component-select');
+
+            if (@Html.Raw(Json.Serialize(Model.ListVersions)) != null) {
+                onUpdate = true;
+                idForm = @Model.IdForm;
+                createDropDownVersion();
+                var version = document.getElementById('version').ej2_instances[0];
+                SetProperties(version.itemData.properties);
+                console.log(version.itemData.properties);
+            }
+        };
+
+        function generateHtml(complexGroup, label) {
+
+            if (complexGroup.childNodes.length != 0) {
+                for (let i = 0; i < complexGroup.childNodes.length; i++) {
+                    let comp = complexGroup.childNodes[i];
+                    if (comp.tagName === 'BUTTON') {
+                        comp.id = cloneIndividual(comp.id, label + '_' + comp.innerText).id;
+                        comp.innerText = label + '_' + comp.innerText;
+                    }
+                    generateHtml(comp, label);
+                }
+            }
+        }
+
+        function onBlur() {
+            ranges = selection.getRange(document);
+            saveSelection = selection.save(ranges, document);
+        }
+
+        function toolbarClick(args) {
+
+            let componentDialog = document.getElementById('customTbarDialog').ej2_instances[0];
+            let components = document.getElementById('rteSpecial_char');
+            let clnComponents = document.getElementById('cln');
+            let warning = document.getElementById('btnWarn');
+            let clnWarning = document.getElementById('clnWarn');
+
+            warning.style.display = 'none';
+            clnWarning.style.display = 'none';
+            components.style.display = 'block';
+            clnComponents.style.display = 'block';
+
+            let selection = new ej.richtexteditor.NodeSelection();
+            defaultRTE.focusIn();
+            ranges = selection.getRange(document);
+            debugger;
+            if (args.item.command === undefined) {
+                let condBtn = document.getElementById('condBtn');
+                if (cursorPlace.includes('Repeat')) {
+                    condBtn.style.display = 'none';
+                } else if ((ranges.startContainer.parentElement.localName == 'button') || (ranges.startContainer.localName == 'button')) {
+                    components.style.display = 'none';
+                    clnComponents.style.display = 'none';
+                    warning.style.display = 'block';
+                    clnWarning.style.display = 'block';
+                }
+                else {
+                    condBtn.style.display = 'block';
+                }
+            }
+        }
+
+        function valueChange(args) {
+            let version = document.getElementById('version').ej2_instances[0];
+            let index = args.value;
+            for (let i = 0; i < version.listData.length; i++) {
+                if (version.listData[i].version == index) {
+                    SetProperties(version.listData[i].properties);
+                    defaultRTE.value = version.listData[i].html;
+                    oldVersion = defaultRTE.getHtml();
+                    break;
+                }
+            }
+        }
+
+        window.onbeforeunload = function () {
+
+            let name = document.getElementById('form-name');
+            let val = defaultRTE.getHtml();
+            if (onUpdate == true) {
+                if ((oldVersion != val)) {
+                    return true;
+                }
+            } else {
+                if (!saveClose) {
+                    if ((oldVersion != val) || (name.value != "")) {
+                        return true;
+                    }
+                }
+            }
+        };
+
+        function onDialogCreate() {
+            dialog = this;
+            dialog.element.style.maxHeight = '600px';
+        }
+
+        function quickToolbarClose(args) {
+
+        }
+
+        async function validateFill(name, html, type) {
+            let save = true;
+            if (name === "") {
+                if (html === null) {
+                    toastr.warning('Please enter form name and content');
+                } else {
+                    toastr.warning('Please enter form name');
+                }
+                save = false;
+            } else if (html === null) {
+                if (name === "") {
+                    toastr.warning('Please enter form name and content');
+                } else {
+                    toastr.warning('Please enter form content');
+                }
+                save = false;
+            } else if (oldVersion == defaultRTE.getHtml()) {
+                if (type == 1) {
+                    window.location = "form/formList";
+                }
+                save = false;
+            } else {
+                let unconf = document.getElementsByClassName('unconf').length;
+                if (unconf != 0) {
+                    await Swal.fire({
+                        type: "warning",
+                        icon: "warning",
+                        title: "Warning",
+                        text: "There are some unconfigured elements. Do you want to save anyways?",
+                        showCancelButton: true,
+                        confirmButtonText: "Continue"
+                    }).then(function (result) {
+                        if (!result.value) {
+                            save = false;
+                        }
+                    });
+                }
+            }
+            if (!save) {
+                return false;
+            }
+
+            return true;
+        }
+
+
+        async function creatform(type) {
+            if (type == 1) {
+                saveClose = true;
+            }
+            let name = document.getElementById("form-name").value;
+            let html = defaultRTE.value;
+            let flag = await validateFill(name, html, type);
+            if (flag) {
+                let properties = GetAllPropierties();
+                if (idForm != null) { // Update form
+                    updatform(name, html, properties, type);
+                } else { // Create new form
+                    newform(name, html, properties, type);
+                }
+            }
+
+        }
+
+        function updatform(name, html, properties, type) {
+            $("div#spinner").fadeIn("fast");
+
+            $.ajax({
+                type: "POST",
+                url: "Form/FormCreator?handler=Updatform",
+                data: { Id: idForm, Name: name, Properties: properties, HTML: html },
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("XSRF-TOKEN",
+                        $('input:hidden[name="__RequestVerificationToken"]').val());
+                },
+                success: function (response) {
+                    $("div#spinner").stop();
+                    $("div#spinner").fadeOut("fast");
+                    toastr.success('New version updated');
+                    oldVersion = html;
+                    if (type == 2) {
+                        updateData(idForm);
+                        return;
+                    }
+                    window.location = "form/formList";
+                },
+                failure: function (response) {
+                    $("div#spinner").stop();
+                    $("div#spinner").fadeOut("fast");
+                    alert("fail");
+                },
+                error: function (xhr, status, error) {
+                    $("div#spinner").stop();
+                    $("div#spinner").fadeOut("fast");
+                    if (xhr.status == 401) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Session expired',
+                            allowEnterKey: true,
+                            allowEscapeKey: false,
+                            showLoaderOnConfirm: true,
+                            html: `<span>Please re-enter your password</span>
+                              <input type="text" id="login" class="swal2-input" value="@Model.currentUser" readonly>
+                              <input type="password" id="password" class="swal2-input" placeholder="Password">`,
+                            confirmButtonText: 'Sign in',
+                            focusConfirm: false,
+                            preConfirm: () => {
+                                const password = Swal.getPopup().querySelector('#password').value;
+                                if (!password) {
+                                    Swal.showValidationMessage(`Please enter your password`);
+                                } else {
+                                    $("div#spinner").fadeIn("fast");
+
+                                    let fd = new FormData();
+                                    fd.append('Input.Email', '@Model.currentUser');
+                                    fd.append('Input.Password', password);
+                                    fd.append('Input.RememberMe', false);
+
+                                    return $.ajax({
+                                        type: "POST",
+                                        url: "Identity/Account/Login?handler=Verify",
+                                        data: fd,
+                                        processData: false,
+                                        contentType: false,
+                                        success: function (response) { }
+                                    }).then(response => {
+                                        return response;
+                                    }).catch(error => {
+
+                                        $("div#spinner").stop();
+                                        $("div#spinner").fadeOut("fast");
+
+                                        swal.showValidationMessage('Error: ' + error.responseText);
+                                    });
+                                }
+                            }
+                        }).then((result) => {
+
+                            $("div#spinner").stop();
+                            $("div#spinner").fadeOut("fast");
+
+                            updatform(name, html, properties, type);
+
+                        })
+                    } else {
+                        Swal.fire({
+                            type: "error",
+                            icon: "warning",
+                            title: "Connection error",
+                            text: "Check your connection and try again. If the problem persists, contact costumer service",
+                            showCancelButton: true,
+                            cancelButtonText: "Accept",
+                            confirmButtonText: "Retry"
+                        }).then(function (result) {
+                            if (result.value) {
+                                updatform(name, html, properties, type);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        function updateData(id) {
+            $.ajax({
+                type: "GET",
+                url: "Form/FormCreator?handler=UpdateVersion",
+                data: { IdForm: id },
+                success: function (response) {
+                    let version = document.getElementById("version").ej2_instances[0];
+                    version.dataSource = response.data;
+                    version.change = valueChange;
+                    version.fields = { text: "version", value: "version" };
+                    version.itemData = [response.version];
+                    version.value = response.version.version;
+                    version.refresh();
+                },
+                failure: function (response) {
+                    alert("fail");
+                },
+                error: function (response) {
+                    Swal.fire({
+                        type: "error",
+                        icon: "warning",
+                        title: "Connection error",
+                        text: "Check your connection and try again. If the problem persists, contact costumer service",
+                        showCancelButton: true,
+                        cancelButtonText: "Accept",
+                        confirmButtonText: "Retry"
+                    }).then(function (result) {
+                        if (result.value) {
+                            updateData(id);
+                        }
+                    });
+                }
+            });
+        }
+
+        function newform(name, html, properties, type) {
+            $("div#spinner").fadeIn("fast");
+            $.ajax({
+                type: "POST",
+                url: "Form/FormCreator?handler=Savform",
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader("XSRF-TOKEN",
+                        $('input:hidden[name="__RequestVerificationToken"]').val());
+                },
+                data: { Name: name, Properties: properties, HTML: html },
+                success: function (response) {
+                    $("div#spinner").stop();
+                    $("div#spinner").fadeOut("fast");
+                    oldVersion = html;
+                    toastr.success('New form created');
+                    idForm = response.formID;
+                },
+                failure: function (response) {
+                    $("div#spinner").stop();
+                    $("div#spinner").fadeOut("fast");
+                    alert("fail");
+                },
+                error: function (response) {
+                    $("div#spinner").stop();
+                    $("div#spinner").fadeOut("fast");
+                    Swal.fire({
+                        type: "error",
+                        icon: "warning",
+                        title: "Connection error",
+                        text: "Check your connection and try again. If the problem persists, contact costumer service",
+                        showCancelButton: true,
+                        cancelButtonText: "Accept",
+                        confirmButtonText: "Retry"
+                    }).then(function (result) {
+                        if (result.value) {
+                            newform(name, html, properties, type);
+                        }
+                    });
+                }
+            });
+            oldVersion = html;
+            if (type == 2) {
+                onUpdate = true;
+                document.getElementById('form-name').readOnly = true;
+                let span = document.createElement('span');
+                span.innerText = 'Version';
+                let input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'version';
+                let div = document.getElementById('dropDownVersion');
+                div.appendChild(span);
+                div.appendChild(input);
+                let versionObj = new ej.dropdowns.DropDownList({
+                    dataSource: [{ version: '1' }],
+                    value: '1',
+                    text: '1',
+                    fields: { value: 'version' },
+                    index: '1'
+                });
+                versionObj.appendTo('#version');
+                return;
+            }
+            window.location = "Form/FormList";
+        }
+
+        function onInsert() {
+            let id = "";
+            var activeEle = dialog.element.querySelector('.char_block.e-active');
+            if (activeEle.textContent === "Input") {
+                id = CreateComponent("Input");
+                activeEle = "<button id=\"" + id + "\" class=\"input_element unconf btn btn-outline-danger btn-sm\" onclick=\"openDialog(this)\">" + activeEle.textContent + ": click to edit</button>&nbsp;";
+            } 
+            if (defaultRTE.formatter.getUndoRedoStack().length === 0) {
+                defaultRTE.formatter.saveData();
+            }
+            defaultRTE.executeCommand('insertHTML', activeEle);
+            defaultRTE.formatter.saveData();
+            defaultRTE.formatter.enableUndo(defaultRTE);
+            dialogOverlay();
+        }
+
+        function dialogOverlay() {
+            var activeEle = dialog.element.querySelector('.char_block.e-active');
+            if (activeEle) {
+                activeEle.classList.remove('e-active');
+            }
+            dialog.hide();
+        }
+
+        function setType() {
+            var dropdown = document.getElementById('input-type').ej2_instances[0];
+            var val = dropdown.text;
+            document.getElementById("preview-input").type = val;
+        }
+
+        function openDialog(element) {
+
+            switch (element.classList[0]) {
+                case "input_element":
+                    _id = element.id;
+                    let input_element = GetComponent(element.id, "Input");
+                    _seq = input_element.seq;
+                    _conditions = input_element.conditions;
+                    ////(input_element);
+                    document.getElementById("input-placeholder").ej2_instances[0].value = input_element.label;
+                    document.getElementById("input-type").ej2_instances[0].value = input_element.type;
+                    var dialog = document.getElementById("inputDialog").ej2_instances[0];
+                    dialog.show();
+                    break;
+                default:
+                    break;
+            }
+            defaultRTE.focusIn();
+        }
+
+        function saveDialog() {
+            let _dialog = this;
+            let _label, _placeholder, _type, _required, _autofill, _options;
+            let properties;
+            let invalid = false;
+            switch (_dialog.element.id) {
+                case "inputDialog":
+                    let title = document.getElementById("input-placeholder");
+                    _label = title.ej2_instances[0].value;
+                    let prop = document.getElementById("input-type");
+                    _type = prop.ej2_instances[0].value;
+                    let inputlabelwarn = document.getElementById('inputlabelwarn');
+                    let inputtypewarn = document.getElementById('inputtypewarn');
+                    if (_label == '') {
+                        inputlabelwarn.style.display = "block";
+                        invalid = true;
+                    } else {
+                        inputlabelwarn.style.display = "none";
+                    }
+                    if (_type == null) {
+                        inputtypewarn.style.display = "block";
+                        invalid = true;
+                    } else {
+                        inputtypewarn.style.display = "none";
+                    }
+                    if (invalid) {
+                        return;
+                    }
+                    document.getElementById("input-type").ej2_instances[0].value = null;
+                    properties = { id: _id, label: _label, type: _type, required: _required };
+                    EditComponent(properties, "Input");
+                    break;
+                default:
+                //("not an option");
+            }
+            var selectioncursor = new ej.richtexteditor.NodeSelection();
+            let btn = document.getElementById(_id);
+            btn.innerText = _label; 
+            btn.classList.replace('unconf', 'conf');
+            btn.classList.replace('btn-outline-danger', 'btn-outline-secondary');
+
+            _dialog.hide(); 
+            setCursor();
+
+        }
+
+        function setCursor() {
+            let selectioncursor = new ej.richtexteditor.NodeSelection();
+            let element = document.getElementById("customtool").ej2_instances[0].contentModule.getDocument().getElementById(_id);
+            let range = document.createRange();
+            range.setStart(element, 1);
+            selectioncursor.setRange(document, range);
+        }
+
+        function hideDialog() {
+            var dialog = this;
+            setCursor();
+            dialog.hide();
+            document.getElementById("input-type").ej2_instances[0].value = null;
+        }
+
+    </script>
+  
+}
+
